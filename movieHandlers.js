@@ -67,8 +67,7 @@ const deleteMovies = (req, res) => {
   // const { title, director, year, color, duration } = req.body;
   database
     .query(
-      "DELETE FROM movies WHERE id = ?",
-      [id]
+      "DELETE FROM movies WHERE id = ?",[id]
     )
     .then(([result]) => {
       if (result.affectedRows === 0) {
