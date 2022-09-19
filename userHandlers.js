@@ -133,7 +133,10 @@ const deleteUser = (req, res) => {
     .then(([result]) => {
       if (result.affectedRows === 0) {
         res.status(404).send("Not Found");
-      } else {
+      } else if (req.payload.sub !== id) 
+      {
+        res.sendStatus(403);
+      }else{
         res.sendStatus(204);
       }
     })
