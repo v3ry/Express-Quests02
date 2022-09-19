@@ -40,17 +40,41 @@ const getUsers = (req,res)=>{
 
 const getUserById = (req, res) => {
   const id = parseInt(req.params.id);
-console.log(id);
+
   database
-    .query(`select firstname, lastname, email, city, language from users where id = ${id}`)
-    .then(([user]) => {
-      user.length != 0 ? res.json(user):res.json("Not Found")
+    .query("select id, firstname, lastname, email, city, language from users where id = ?", [id])
+    .then(([users]) => {
+      if (users[0] != null) {
+        res.json(users[0]);
+      } else {
+        res.status(404).send("Not Found");
+      }
     })
     .catch((err) => {
       console.error(err);
-      res.status(404).json("Error retrieving data from database");
+      res.status(500).send("Error retrieving data from database");
     });
-}
+};
+
+const getUserByEmailWithPasswordAndPassToNext = (req, res, next) => {
+  const { email } = req.body;
+
+  database
+    .query("select * from users where email = ?", [email])
+    .then(([users]) => {
+      if (users[0] != null) {
+        req.user = users[0];
+
+        next();
+      } else {
+        res.sendStatus(401);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error retrieving data from database");
+    });
+};
 
 const postUser = (req, res) => {
   console.log(req.body);
@@ -71,7 +95,10 @@ const postUser = (req, res) => {
 const updateUser = (req, res) => {
   const id = parseInt(req.params.id)
   const { firstname, lastname, email, city, language } = req.body;
-  console.log(req);
+  console.log(req.payload.sub);
+  console.log(id);
+  console.log(typeof(req.payload.sub));
+  console.log(typeof(id));
   database
     .query(
       "UPDATE users SET firstname = ?,lastname = ?, email = ?, city = ?, language = ? WHERE id = ?",
@@ -80,7 +107,13 @@ const updateUser = (req, res) => {
     .then(([result]) => {
       if (result.affectedRows === 0) {
         res.status(404).send("Not Found");
-      } else {
+      } else if (req.payload.sub !== id) 
+      {
+        res.sendStatus(403);
+        console.log(typeof(req.payload.sub));
+        console.log(typeof(id));
+      }else 
+      {
         res.sendStatus(204);
       }
     })
@@ -113,6 +146,7 @@ const deleteUser = (req, res) => {
 module.exports = {
   getUsers,
   getUserById,
+  getUserByEmailWithPasswordAndPassToNext,
   postUser,
   updateUser,
   deleteUser,
