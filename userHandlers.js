@@ -1,5 +1,6 @@
 const database = require("./database");
-
+const {mailRecover} = require("./sendEmail")
+const jwt_decode = require("jwt-decode")
 
 const getUsers = (req,res)=>{
   const initialSql = "select firstname, lastname, email, city, language from users";
@@ -95,10 +96,6 @@ const postUser = (req, res) => {
 const updateUser = (req, res) => {
   const id = parseInt(req.params.id)
   const { firstname, lastname, email, city, language } = req.body;
-  console.log(req.payload.sub);
-  console.log(id);
-  console.log(typeof(req.payload.sub));
-  console.log(typeof(id));
   database
     .query(
       "UPDATE users SET firstname = ?,lastname = ?, email = ?, city = ?, language = ? WHERE id = ?",
@@ -115,6 +112,55 @@ const updateUser = (req, res) => {
       }else 
       {
         res.sendStatus(204);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error editing the user");
+    });
+};
+
+// Partie pour changer le mot de passe
+const getUserByEmail= (req, res, next) => {
+  const { email } = req.body;
+  database
+    .query("select id,firstname,lastname,email,city,language from users where email = ?", [email])
+    .then(([users]) => {
+      if (users[0] != null) {
+        let message = (email+ " " + users[0].id)
+        req.user = users[0];
+        // res.status(203).send("Mail envoyé");
+        console.dir(users[0])
+        next()
+        // mailRecover(message)
+      } else {
+        res.sendStatus(401);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error retrieving data from database");
+    });
+};
+
+const updateUserForChangePassword = (req, res) => {
+  const id = parseInt(req.params.id)
+  const token = req.params.tokens
+  // let decoded = jwt_decode(token);
+  // console.log("decoded: " + decoded);
+  // getMyUserForSecu(req,res,id)
+  const { hashedPassword } = req.body;
+  database
+    .query(
+      "UPDATE users SET hashedPassword = ? WHERE id = ?",
+      [hashedPassword,id]
+    )
+    .then(([result]) => {
+      if (result.affectedRows === 0) {
+        res.status(404).send("Not Found");
+      }else
+      {
+        res.status(204).send("User password edited");
       }
     })
     .catch((err) => {
@@ -150,7 +196,9 @@ module.exports = {
   getUsers,
   getUserById,
   getUserByEmailWithPasswordAndPassToNext,
+  getUserByEmail,
   postUser,
   updateUser,
+  updateUserForChangePassword,
   deleteUser,
 };

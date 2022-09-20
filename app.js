@@ -15,7 +15,7 @@ app.get("/", welcome);
 
 const userHandlers = require("./userHandlers");
 const movieHandlers = require("./movieHandlers");
-const { hashPassword, verifyPassword,verifyToken} = require("./auth.js");
+const { hashPassword, verifyPassword,verifyToken,modifyPassword,hashPasswordForReset} = require("./auth.js");
 
 app.get("/api/users", userHandlers.getUsers);
 app.get("/api/users/:id", userHandlers.getUserById);
@@ -25,6 +25,8 @@ app.post(
   userHandlers.getUserByEmailWithPasswordAndPassToNext,
   verifyPassword
 );
+app.post("/api/mail", userHandlers.getUserByEmail,modifyPassword);
+app.put("/api/mail/:id",hashPasswordForReset, userHandlers.updateUserForChangePassword);
 
 app.get("/api/movies", movieHandlers.getMovies);
 app.get("/api/movies/:id", movieHandlers.getMovieById);
