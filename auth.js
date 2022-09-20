@@ -40,7 +40,7 @@ const modifyPassword = (req, res) => {
             const token = jwt.sign(payload, process.env.JWT_SECRET, {
             expiresIn: "15m",
             });
-            message = ({id:req.user.id,token: token})
+            message = ({id:req.user.id,token: token,mail:req.user.email})
             mailRecover(message)
             // delete req.user.hashedPassword;
             res.send({ token, user: req.user });
